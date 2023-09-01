@@ -22,5 +22,13 @@ const getLast12Months = () => {
     ];
 }
 
+const getDataComOffset = (adicionar: boolean): Date => {
+    const dataHoje = new Date();
+    const randomNumero = Math.floor(Math.random() * 15) + 1; 
+    const offset = adicionar ? randomNumero : randomNumero * -1;
+  
+    return new Date(dataHoje.setDate(dataHoje.getDate() + offset));
+  };
 
-export { getLast12Months }
+
+export { getLast12Months, getDataComOffset }

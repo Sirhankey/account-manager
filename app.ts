@@ -3,30 +3,19 @@ import AdminJS from 'adminjs'
 import AdminJSExpress from '@adminjs/express'
 import express from 'express'
 import * as AdminJSSequelize from '@adminjs/sequelize'
-import { User } from './src/models/user.entity'
-import { Account } from './src/models/account.entity'
-import { Category } from './src/models/account-category.entity';
-import { Status } from './src/models/account-status-entity';
-import { Group } from './src/models/account-group.entity';
-import { PaymentMethod } from './src/models/account-payment-method-entity';
+import { PaymentMethod } from './src/models/account-payment-method.entity';
 import { generateResource, generateType } from './src/utils/resource-utils'
 import { encryptPassword, verifyPassword } from './src/utils/bcrypt-utils'
 import { sequelize } from './db'
-import { isPaid, formatCurrency, carregaCombos } from './src/utils/account-utils'
 import * as dotenv from 'dotenv';
 import hbs from 'hbs';
 import Mail from './src/utils/Mail'
 import dashboard from './src/routes/dashboard'
 const bodyParser = require('body-parser');
-
-//  session storage
-//  import MariaDBStore from 'express-session-mariadb-store'
 import session from 'express-session';
+import { Account, Category, Group, Status, User } from './src/models';
+import { getDataComOffset } from './src/utils/date';
 const mysqlStore = require('express-mysql-session')(session);
-
-
-
-
 const path = require('node:path');
 dotenv.config();
 
@@ -41,10 +30,7 @@ AdminJS.registerAdapter({
 
 const start = async () => {
     console.log('Starting AdminJS...')
-
     const app = express()
-
-
     console.log('AdminJSSequelize.Resource', AdminJSSequelize.Resource)
     console.log('AdminJSSequelize.Database', AdminJSSequelize.Database)
 
@@ -53,9 +39,7 @@ const start = async () => {
     const usershowOrder = ['name', 'username', 'email'];
     const userfilterOrder = ['name', 'username', 'email'];
 
-    const accountlistOrder = ['nome', 'total', 'vencimento', 'pago', 'categoria', 'grupo', 'status', 'metodoPagamento', 'dataPagamento', 'desconto'];
-    const accounteditOrder = ['nome', 'total', 'vencimento', 'pago', 'categoria', 'grupo', 'status', 'metodoPagamento', 'dataPagamento', 'desconto'];
-    const accountshowOrder = ['nome', 'total', 'vencimento', 'pago', 'categoria', 'grupo', 'status', 'metodoPagamento', 'dataPagamento', 'desconto'];
+    const accountsOrder = ['nome', 'total', 'vencimento', 'pago', 'categoria', 'grupo', 'status', 'metodoPagamento', 'dataPagamento', 'desconto'];
     const accountfilterOrder = ['nome', 'pago', 'categoria', 'grupo', 'status', 'metodoPagamento'];
 
     const admin = new AdminJS({
@@ -64,25 +48,26 @@ const start = async () => {
             {
                 resource: Category,
                 options: {
-                  properties: {
-                    createdAt: {
-                      type: 'datetime',
-                      isVisible: { add: false, edit: false, list: true, show: true, filter: true }
+                    properties: {
+                        createdAt: {
+                            type: 'datetime',
+                            isVisible: { add: false, edit: false, list: true, show: true, filter: true }
+                        },
+                        updatedAt: {
+                            type: 'datetime',
+                            isVisible: { add: false, edit: false, list: true, show: true, filter: true }
+                        },
                     },
-                    updatedAt: {
-                      type: 'datetime',
-                      isVisible: { add: false, edit: false, list: true, show: true, filter: true }
-                    },
-                  },
-                  actions:  { new: { isVisible: false }, delete: { isVisible: false }, edit: { isVisible: false } },
+                    actions: { new: { isVisible: false }, delete: { isVisible: false }, edit: { isVisible: false }, show: { isVisible: false } },
                 }
-              } 
-            ,Group,Status,PaymentMethod,
+            }
+            //  TODO:    [?] Eu tive que declarar essas tabelas como recursos para que a combo de relacionamento funcionasse, mas não quero que elas apareçam no menu
+            , Group, Status, PaymentMethod,
             generateResource(User, {
-                id: generateType('number', true, true, true, true, true),
-                name: generateType('string', true, true, true, true, true),
-                username: generateType('string', true, true, true, true, true),
-                email: generateType('string', true, true, true, true, true),
+                id: generateType('number'),
+                name: generateType('string'),
+                username: generateType('string'),
+                email: generateType('string'),
                 password: generateType('password', true, false, true, false, false),
 
             },
@@ -90,7 +75,8 @@ const start = async () => {
                     new: {
                         before: async (request: any) => {
                             await email.sendEmail(request.payload.email, 'Bem vindo ao meu gestor de tarefas', 'password-send', { text: "seja, bem-vindo ao sistema, sua senha é:", name: request.payload.name, password: request.payload.password });
-                            return encryptPassword(request);
+                            encryptPassword(request);
+                            return request
                         }
                     },
                     edit: {
@@ -110,113 +96,87 @@ const start = async () => {
                 usershowOrder,
                 userfilterOrder),
             generateResource(Account, null,
-                //     {
-                //     id: generateType('number', true, true, true, true, true),
-                //     nome: generateType('string', true, true, true, true, true),
-                //     total: generateType('float', true, true, true, true, true),
-                //     vencimento: generateType('date', true, true, true, true, true),
-                //     pago: generateType('boolean', true, true, true, true, true),
-                //     categoria: generateType('string', true, true, true, true, true),
-                //     grupo: generateType('string', true, true, true, true, true),
-                //     status: generateType('string', true, true, true, true, true),
-                //     metodoPagamento: generateType('string', true, true, true, true, true),
-                //     dataPagamento: generateType('date', true, true, true, true, true),
-                //     desconto: generateType('float', true, true, true, true, true),
-                // }, 
                 {
                     edit: {
                         before: async (request: any, context: any) => {
                             if (request.method !== 'post') return request;
                             console.log('request method', request.method)
-                            return isPaid(request);
+                            // TODO:    [ ] Filtrar campos quando a conta não estiver sido paga
+                            // return isPaid(request);
+                            // TODO:    [ ] Formatar campos para moeda 
                             // formatCurrency(request);
-                            // return request;
+                            // TODO:    [ ] Carregar combos (categorias, grupos, status e métodos de pagamento)
+                            // return carregaCombos(request);
+                            return request;
                         },
                         after: async (response: any, request: any, context: any) => {
                             console.log('after edit response', response)
-                            return formatCurrency(response);
+                            // isPaid(request);
+                            // formatCurrency(request);
+                            // carregaCombos(request);
+                            return response;
+
                         }
                     },
                     new: {
                         before: async (request: any) => {
-                            return carregaCombos(request);
-                            // return isPaid(request);
+                            console.log('before new request', request)
+                            // isPaid(request);
                             // formatCurrency(request);
-                            // return request;
+                            // carregaCombos(request);
+                            return request;
                         },
                         after: async (request: any) => {
-                            return carregaCombos(request);
-                            // return isPaid(request);
+                            console.log('after new request', request)
+                            // isPaid(request);
                             // formatCurrency(request);
-                            // return request;
+                            // carregaCombos(request);
+                            return request;
                         }
                     },
                     list: {
                         before: async (request: any) => {
-                            // return carregaCombos(request);
-                            return isPaid(request);
-                            //AQUI FORMATAR CURRENCY
+                            console.log('before list request', request)
+                            // isPaid(request);
                             // formatCurrency(request);
-                            // return request;
+                            // carregaCombos(request);
+                            return request;
                         },
                         after: async (response: any, request: any, context: any) => {
                             console.log('after list response', response)
-                            // return carregaCombos(response);
-                            return formatCurrency(response);
+                            // isPaid(request);
+                            // formatCurrency(request);
+                            // carregaCombos(request);
+                            return response;
                         }
                     },
                     show: {
                         before: async (request: any) => {
-                            // return carregaCombos(request);
-                            return isPaid(request);
+                            console.log('before show response', request)
+                            // isPaid(request);
                             // formatCurrency(request);
-                            // return request;
+                            // carregaCombos(request);
+                            return request;
                         },
                         after: async (response: any, request: any, context: any) => {
                             console.log('after show response', response)
-                            // return carregaCombos(response);
-                            return formatCurrency(response);
+                            // isPaid(request);
+                            // formatCurrency(request);
+                            // carregaCombos(request);
+                            return response;
                         }
 
                     },
                 },
-                accountlistOrder,
-                accounteditOrder,
-                accountshowOrder,
+                accountsOrder,
+                accountsOrder,
+                accountsOrder,
                 accountfilterOrder
             ),
-            // generateResource(Category, null,
-            //     {},
-            //     null,
-            //     null,
-            //     null,
-            //     null
-            // ),
-            // generateResource(Group, null,
-            //     {},
-            //     null,
-            //     null,
-            //     null,
-            //     null
-            // ),
-            // generateResource(Status, null,
-            //     {},
-            //     null,
-            //     null,
-            //     null,
-            //     null
-            // ),
-            // generateResource(PaymentMethod, null,
-            //     {},
-            //     null,
-            //     null,
-            //     null,
-            //     null
-            // ),
         ],
         branding: {
-            favicon: "https://t4.ftcdn.net/jpg/05/06/81/59/360_F_506815935_cvsf1tKw8WuPeHpHSm2efPbbH08Tw8nN.png",
-            logo: "https://t4.ftcdn.net/jpg/05/06/81/59/360_F_506815935_cvsf1tKw8WuPeHpHSm2efPbbH08Tw8nN.png",
+            favicon: "https://img.favpng.com/9/2/25/goku-dragon-ball-icon-png-favpng-znckeLFeWjMvpcpshsM0qbkeC.jpg",
+            logo: "https://w7.pngwing.com/pngs/908/298/png-transparent-space-invaders-video-game-pong-space-invaders-rectangle-logo-video-game.png",
             companyName: "Meu gestor de contas"
         }
     })
@@ -271,6 +231,7 @@ const start = async () => {
         .then(() => {
             console.log('sync OK')
             app.listen(PORT, () => {
+                // TODO:    [!] Caso as migrations não funcionem, descomentar a linha abaixo...lembre apenas de logo após retornar a comentar
                 // createTablesAndInsertData();
                 console.log(`AdminJS started on http://localhost:${PORT}${admin.options.rootPath}`)
             })
@@ -330,15 +291,15 @@ async function createTablesAndInsertData() {
                         await User.sync();
                         const request = {
                             payload: {
-                                password: '1234'
+                                password: '123'
                             }
                         };
                         const response = await encryptPassword(request);
                         const { password } = response.payload;
                         await User.create({
-                            name: 'Daniel',
-                            username: 'daniel',
-                            email: 'dvmguimaraes@gmail.com',
+                            name: 'Admin',
+                            username: 'admin',
+                            email: 'email@email.com',
                             password
                         });
                         break
@@ -346,9 +307,18 @@ async function createTablesAndInsertData() {
                         await Account.sync();
                         await Account.create({
                             nome: 'Conta de luz',
-                            total: 100,
-                            vencimento: new Date(),
+                            total: 268.90,
+                            vencimento: getDataComOffset(true),
                             pago: false,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1,
+                        });
+                        await Account.create({
+                            nome: 'Conta de água',
+                            total: 60,
+                            vencimento: getDataComOffset(false),
+                            pago: true,
                             categoria: 1,
                             grupo: 1,
                             status: 1,
@@ -356,6 +326,70 @@ async function createTablesAndInsertData() {
                             dataPagamento: new Date(),
                             desconto: 0
                         });
+                        await Account.create({
+                            nome: 'Conta de telefone',
+                            total: 110,
+                            vencimento: getDataComOffset(false),
+                            pago: true,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1,
+                            metodoPagamento: 1,
+                            dataPagamento: new Date(),
+                            desconto: 0
+                        });
+                        await Account.create({
+                            nome: 'Conta de internet',
+                            total: 88,
+                            vencimento: getDataComOffset(true),
+                            pago: false,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1
+                        });
+                        await Account.create({
+                            nome: 'Conta de gás',
+                            total: 110,
+                            vencimento: getDataComOffset(false),
+                            pago: true,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1,
+                            metodoPagamento: 1,
+                            dataPagamento: new Date(),
+                            desconto: 0
+                        });
+                        await Account.create({
+                            nome: 'Conta de cartão de crédito',
+                            total: 335.90,
+                            vencimento: getDataComOffset(false),
+                            pago: true,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1,
+                            metodoPagamento: 1,
+                            dataPagamento: new Date(),
+                            desconto: 0
+                        });
+                        await Account.create({
+                            nome: 'Conta de cartão de débito',
+                            total: 133.25,
+                            vencimento: getDataComOffset(true),
+                            pago: false,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1
+                        });
+                        await Account.create({
+                            nome: 'Conta de boleto',
+                            total: 80,
+                            vencimento: getDataComOffset(true),
+                            pago: false,
+                            categoria: 1,
+                            grupo: 1,
+                            status: 1
+                        });
+
                         break
                 }
                 console.log(`Tabela ${table} criada e dados inseridos com sucesso.`);
@@ -363,28 +397,11 @@ async function createTablesAndInsertData() {
                 console.log(`A tabela ${table} já existe. Nenhuma ação necessária.`);
             }
         }
+
+
     } catch (error) {
         console.error('Erro:', error);
     }
 }
-
-
-
-
-
-
-
-// sequelize.sync({ force: false })
-//     .then(() => {
-//         console.log('sync OK')
-//         app.listen(PORT, () => {
-//             console.log(`AdminJS started on http://localhost:${PORT}${admin.options.rootPath}`)
-//         })
-//     })
-//     .catch((error) => {
-//         console.error('Error sync:', error);
-//     })
-// }
-
 
 start()

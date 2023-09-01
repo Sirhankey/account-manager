@@ -1,4 +1,4 @@
-const generateResource = (model: object, properties: object | null = null, actions: object | null = null, 
+const generateResource = (model: object, properties: object | null = null, actions: object | null = null,
   listOrder: string[] | null, editOrder: string[] | null, showOrder: string[] | null, lisfilterOrdertOrder: string[] | null) => {
   return {
     resource: model,
@@ -23,7 +23,7 @@ const generateResource = (model: object, properties: object | null = null, actio
   }
 }
 
-const generateType = (type: string, add: boolean, list: boolean, edit: boolean, filter: boolean, show: boolean) => {
+const generateType = (type: string, add: boolean = true, list: boolean = true, edit: boolean = true, filter: boolean = true, show: boolean = true) => {
   return {
     type: type,
     isVisible: {

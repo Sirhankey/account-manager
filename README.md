@@ -50,6 +50,11 @@ Execute as migrações do banco de dados para criar as tabelas:
 ```bash
 yarn sequelize db:migrate
 ```
+Caso não consiga rodar as migrations, seguir o seguinte passo na 
+TODO list do projeto:
+```bash
+[!] TODO: Caso as migrations não funcionem, ... 
+```
 Inicie o servidor de desenvolvimento:
 ```bash
 tsx watch app.ts

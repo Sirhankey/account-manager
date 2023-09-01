@@ -92,7 +92,7 @@ Account.init({
     },
     metodoPagamento: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         field: 'paymentMethodId',
         references: {
             model: 'paymentMethods',
