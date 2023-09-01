@@ -1,19 +1,18 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../../db";
-import { AccountCategory, AccountGroup, AccountStatus, PaymentMethod } from "../enums";
 
 interface IAccount {
     id: number;
-    name: string;
-    amount: number;
-    dueDate: Date;
-    isPaid: boolean;
-    category: AccountCategory;
-    group: AccountGroup;
-    status: AccountStatus;
-    paymentMethod?: PaymentMethod;
-    paymentDate?: Date;
-    discount?: number;
+    nome: string;
+    total: number;
+    vencimento: Date;
+    pago: boolean;
+    categoria: number;
+    grupo: number;
+    status: number;
+    metodoPagamento?: number;
+    dataPagamento?: Date;
+    desconto?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -22,18 +21,18 @@ export type AccountCreationAttributes = Optional<IAccount, 'id'>;
 
 export class Account extends Model<IAccount, AccountCreationAttributes> implements IAccount {
     declare id: number;
-    declare name: string;
-    declare amount: number;
-    declare dueDate: Date;
-    declare isPaid: boolean;
-    declare category: AccountCategory;
-    declare group: AccountGroup;
-    declare status: AccountStatus;
-    declare paymentMethod?: PaymentMethod;
-    declare paymentDate?: Date;
-    declare discount?: number;
-    declare createdAt: Date;
-    declare updatedAt: Date;
+    declare nome: string;
+    declare total: number;
+    declare vencimento: Date;
+    declare pago: boolean;
+    declare categoria: number;
+    declare grupo: number;
+    declare status: number;
+    declare metodoPagamento?: number;
+    declare dataPagamento?: Date;
+    declare desconto?: number;
+    declare createdAt?: Date;
+    declare updatedAt?: Date;
 }
 
 Account.init({
@@ -43,55 +42,77 @@ Account.init({
         unique: true,
         primaryKey: true,
     },
-    name: {
+    nome: {
         type: DataTypes.STRING(128),
         allowNull: false,
+        field: 'name'
     },
-    amount: {
+    total: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
+        field: 'amount'
     },
-    dueDate: {
+    vencimento: {
         type: DataTypes.DATE,
         allowNull: false,
+        field: 'dueDate'
     },
-    isPaid: {
+    pago: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+        field: 'isPaid'
     },
-    category: {
-        type: DataTypes.ENUM,
-        values: Object.values(AccountCategory),
+    categoria: {
+        type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'categoryId',
+        references: {
+            model: 'categories',
+            key: 'id'
+        }
     },
-    group: {
-        type: DataTypes.ENUM,
-        values: Object.values(AccountGroup),
+    grupo: {
+        type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'groupId',
+        references: {
+            model: 'groups',
+            key: 'id'
+        }
     },
     status: {
-        type: DataTypes.ENUM,
-        values: Object.values(AccountStatus),
+        type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'statusId',
+        references: {
+            model: 'status',
+            key: 'id'
+        }
     },
-    paymentMethod: {
-        type: DataTypes.ENUM,
-        values: Object.values(PaymentMethod),
-        allowNull: true,
+    metodoPagamento: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'paymentMethodId',
+        references: {
+            model: 'paymentMethods',
+            key: 'id'
+        }
     },
-    paymentDate: {
+    dataPagamento: {
         type: DataTypes.DATE,
         allowNull: true,
+        field: 'paymentDate'
     },
-    discount: {
+    desconto: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
+        field: 'discount'
     },
     createdAt: {
         type: new DataTypes.DATE,
         allowNull: false,
-        defaultValue: new Date()
+        defaultValue: new Date(),
     },
     updatedAt: {
         type: new DataTypes.DATE,
@@ -104,3 +125,42 @@ Account.init({
     modelName: 'account',
 });
 
+// Account.belongsTo(Category, { foreignKey: 'categoriaId', as: 'category' });
+// Account.belongsTo(Group, { foreignKey: 'grupoId', as: 'group' });
+// Account.belongsTo(Status, { foreignKey: 'statusId', as: 'status_' });
+// Account.belongsTo(PaymentMethod, { foreignKey: 'metodoPagamentoId', as: 'paymentMethod' });
+// Account.hasOne(Group, {
+//     foreignKey: 'grupoId',
+// })
+
+// Group.belongsTo(Account, {
+//     foreignKey: 'grupoId',
+//     constraints: true
+// })
+
+// Account.hasOne(Status, {
+//     foreignKey: 'statusId'
+// })
+
+// Status.belongsTo(Account, {
+//     foreignKey: 'statusId',
+//     constraints: true
+// })
+
+// Account.hasOne(Category, {
+//     foreignKey: 'categoraiaId'
+// })
+
+// Category.belongsTo(Account, {
+//     foreignKey: 'categoraiaId',
+//     constraints: true
+// })
+
+// Account.hasOne(PaymentMethod, {
+//     foreignKey: 'metodoPagamentoId'
+// })
+
+// PaymentMethod.belongsTo(Account, {
+//     foreignKey: 'metodoPagamentoId',
+//     constraints: true
+// })

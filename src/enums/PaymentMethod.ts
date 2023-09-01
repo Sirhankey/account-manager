@@ -1,8 +1,8 @@
-export enum PaymentMethod {
-    Pix = 'pix',
-    CreditCard = 'credit_card',
-    DebitCard = 'debit_card',
-    Boleto = 'boleto',
-    Transfer = 'transfer',
-    PayPal = 'paypal',
+export enum PaymentMethodEnum {
+    Pix = 'Pix',
+    CreditCard = 'Cartão de Crédito',
+    DebitCard = 'Cartão de Débito',
+    Boleto = 'Boleto',
+    Transfer = 'Transferência',
+    PayPal = 'PayPal',
 }

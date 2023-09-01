@@ -1,4 +1,6 @@
-export enum AccountCategory {
-    CreditCard = 'credit_card',
-    Monthly = 'monthly',
+export enum AccountCategoryEnum {
+    CreditCard = 'Cartão de Crédito',
+    Monthly = 'Mensal',
+    Extra = 'Extra',
+    Other = 'Outros',
 }

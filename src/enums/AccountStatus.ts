@@ -1,6 +1,6 @@
-export enum AccountStatus {
-    Upcoming = 'upcoming',  // Conta a vencer
-    Overdue = 'overdue',    // Conta atrasada
-    Paid = 'paid',          // Conta paga
-    Future = 'future',      // Conta futura
+export enum AccountStatusEnum {
+    Upcoming = 'A vencer',  // Conta a vencer
+    Overdue = 'Atrasada',    // Conta atrasada
+    Paid = 'Pago',          // Conta paga
+    Future = 'Futura',      // Conta futura
 }
