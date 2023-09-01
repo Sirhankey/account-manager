@@ -60,7 +60,7 @@ export default class AccountController{
                     'status',
                     [sequelize.fn('COUNT', sequelize.col('id')), 'totalAccounts'],
                     'nome',
-                    'valor'
+                    'amount'
                 ],
                 where: {
                     dataPagamento: {
@@ -92,32 +92,6 @@ export default class AccountController{
         }
 
         return [accountsTrue, accountsFalse];
-    }
-
-    async getDataMonth(month: any){
-        const result = await this.getWeekDays();
-        console.log(result)
-
-        return  {
-            labels: result[0],
-            data: {
-                labels: result[0],
-                datasets: [
-                  {
-                    label: 'Tarefas Feitas',
-                    data: result[1],
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                  },
-                  {
-                    label: 'Tarefas em aberto',
-                    data: result[2],
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                  },
-                ],
-            }
-        }
     }
 
     async getWeekDays(){

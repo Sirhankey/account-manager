@@ -60,9 +60,33 @@ Inicie o servidor de desenvolvimento:
 tsx watch app.ts
 ```
 ### Recursos Adicionais
-
 ### Envio de Emails
 O projeto utiliza o Nodemailer para enviar e-mails, por exemplo, para notificar sobre novas contas ou pagamentos pendentes.
+### Rotas disponíveis
+#### Rotas principais
+```bash
+/admin/resources/accounts
+```
+```bash
+/admin/resources/users
+```
+```bash
+/dashboard/accounts/months
+```
+#### Rotas secundárias
+
+```bash
+/admin/resources/paymentMethods
+```
+```bash
+/admin/resources/status
+```
+```bash
+/admin/resources/groups
+```
+```bash
+/admin/resources/categories
+```
 
 ### Contribuindo
 Sinta-se à vontade para contribuir com este projeto abrindo problemas (issues) ou enviando pull requests. Esperamos que este projeto seja útil e estamos ansiosos para ver suas contribuições.

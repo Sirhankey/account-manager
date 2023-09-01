@@ -12,10 +12,4 @@ dashboard.get('/accounts/months', async (req, res) => {
     res.json(result);
 });
 
-dashboard.get('/accounts/months/:month', async (req, res) => {
-    const result: object = await accountController.getDataMonth(req.params.month);
-    res.json(result);
-});
-
-
 export default dashboard;
